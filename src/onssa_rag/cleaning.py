@@ -48,7 +48,15 @@ def _section(url: str) -> str:
 
 def extract_page(url: str, html: str) -> dict | None:
     """Return a clean document dict, or None when the page has no real content."""
-    text = trafilatura.extract(html, include_comments=False, include_tables=True) or ""
+    text = (
+        trafilatura.extract(
+            html,
+            output_format="markdown",  # keeps headings for heading-aware chunking
+            include_comments=False,
+            include_tables=True,
+        )
+        or ""
+    )
     if len(text) < MIN_TEXT_CHARS:
         text = _fallback_extract(html)
     text = _normalize(text)
