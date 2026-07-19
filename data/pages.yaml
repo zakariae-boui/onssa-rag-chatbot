@@ -53,3 +53,18 @@ exclude:
   - https://www.onssa.gov.ma/onssa/          # pure navigation hub, no text
   - https://www.onssa.gov.ma/phototheque/
   - https://www.onssa.gov.ma/newsletter/
+  # Sandbox / test pages found in the first full scrape
+  - https://www.onssa.gov.ma/test/
+  - https://www.onssa.gov.ma/slide-test-video/
+  - https://www.onssa.gov.ma/46379-2/
+
+exclude_patterns:
+  # Recruitment listings and one-off administrative pages (noise for a QA bot)
+  - liste-des-candidats
+  - planning-et-listes
+  - entretiens-oraux
+  - formulaire-de-traitement
+  # Outdated yearly "Aid Al Adha" specials (1447 = current edition is kept)
+  - special-aid-al-adha-144[3-6]
+  # Numeric-only junk slugs (e.g. /46379-2/)
+  - 'onssa\.gov\.ma/\d[\d-]*/$'
