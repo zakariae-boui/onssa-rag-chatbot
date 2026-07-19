@@ -1,0 +1,23 @@
+# --- App ---
+streamlit>=1.36
+python-dotenv>=1.0
+
+# --- Ingestion (scraping & cleaning) ---
+requests>=2.32
+trafilatura>=1.9
+beautifulsoup4>=4.12
+lxml>=5.2
+PyYAML>=6.0
+
+# --- RAG ---
+sentence-transformers>=3.0
+faiss-cpu>=1.9
+rank-bm25>=0.2.2
+ollama>=0.3
+
+# --- Data handling ---
+pandas>=2.2
+pyarrow>=16.0
+
+# --- Dev / tests ---
+pytest>=8.0

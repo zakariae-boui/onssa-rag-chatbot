@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Environment
+.env
+
+# Data artifacts (rebuilt via ingest.py — pages.yaml and eval_questions.yaml stay tracked)
+data/raw_html/
+data/clean/
+data/index/
+
+# Models cache
+.cache/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
