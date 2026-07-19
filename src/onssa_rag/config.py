@@ -24,6 +24,12 @@ EVAL_QUESTIONS = DATA_DIR / "eval_questions.yaml"
 # --- Ollama ---
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral:7b")
+# Ollama defaults to a 4096-token window, which our context-rich prompts can
+# overflow — overflow silently truncates the oldest tokens, i.e. the system
+# prompt with the grounding rules.
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
+# Keep the model in memory between questions of a session (reload costs ~20 s).
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 
 # --- Embeddings ---
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
@@ -43,7 +49,9 @@ BM25_GATE = float(os.getenv("BM25_GATE", "12.0"))
 # demotes good vector results. Eval sweep: this setup 14/15 vs 13/15 vector-only.
 BM25_WEIGHT = float(os.getenv("BM25_WEIGHT", "1.0"))
 BM25_CANDIDATES = int(os.getenv("BM25_CANDIDATES", "5"))
-MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "8000"))
+# Prompt-evaluation time on CPU grows linearly with context length; 6000 chars
+# keeps answers grounded while staying responsive on modest laptops.
+MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "6000"))
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "900"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
 

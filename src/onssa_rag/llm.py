@@ -32,7 +32,8 @@ def chat_stream(messages: list[dict], temperature: float = 0.2) -> Iterator[str]
         model=config.OLLAMA_MODEL,
         messages=messages,
         stream=True,
-        options={"temperature": temperature},
+        keep_alive=config.OLLAMA_KEEP_ALIVE,
+        options={"temperature": temperature, "num_ctx": config.OLLAMA_NUM_CTX},
     ):
         yield part["message"]["content"]
 
@@ -41,6 +42,7 @@ def complete(prompt: str, temperature: float = 0.0, max_tokens: int = 150) -> st
     resp = _client().generate(
         model=config.OLLAMA_MODEL,
         prompt=prompt,
+        keep_alive=config.OLLAMA_KEEP_ALIVE,
         options={"temperature": temperature, "num_predict": max_tokens},
     )
     return resp["response"].strip()
