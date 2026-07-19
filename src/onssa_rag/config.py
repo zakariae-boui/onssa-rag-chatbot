@@ -31,7 +31,18 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
 # --- RAG ---
 TOP_K = int(os.getenv("TOP_K", "5"))
 RETRIEVER_CANDIDATES = int(os.getenv("RETRIEVER_CANDIDATES", "20"))
-SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.30"))
+# Calibrated empirically for multilingual-e5-base: in-scope questions score
+# 0.83+, out-of-scope 0.82 and below (e5 has a high cosine floor, so classic
+# values like 0.30 would never trigger the fallback).
+SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.825"))
+# BM25 leg of the gate: common-word matches reach ~8 (e.g. "prix" in tariff
+# pages), confident keyword hits (Codex, Aid Al Adha) score 13+.
+BM25_GATE = float(os.getenv("BM25_GATE", "12.0"))
+# BM25 is a precision leg: only its top few, most confident exact-match hits
+# join the fusion (at full weight) — its deeper tail is common-stem noise that
+# demotes good vector results. Eval sweep: this setup 14/15 vs 13/15 vector-only.
+BM25_WEIGHT = float(os.getenv("BM25_WEIGHT", "1.0"))
+BM25_CANDIDATES = int(os.getenv("BM25_CANDIDATES", "5"))
 MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "8000"))
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "900"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
