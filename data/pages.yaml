@@ -1,0 +1,55 @@
+# ONSSA pages to index — the source of truth for the knowledge base.
+#
+# How ingestion uses this file:
+#   1. URLs under `include` are ALWAYS fetched.
+#   2. page-sitemap.xml is expanded and filtered by `sitemap_filters`.
+#   3. URLs under `exclude` are ALWAYS dropped (wins over everything).
+#
+# Verified during website reconnaissance (July 2026) — see PROJECT_PLAN.md, section 2.
+
+sitemaps:
+  - https://www.onssa.gov.ma/page-sitemap.xml
+
+sitemap_filters:
+  # Drop ?lang=ar / ?lang=en variants (we index French only)
+  drop_query_langs: true
+  # Drop Arabic-encoded slugs (percent-encoded non-latin URLs)
+  drop_non_latin_slugs: true
+
+include:
+  # --- ONSSA institutional (minimum required scope) ---
+  - https://www.onssa.gov.ma/missions/                                        # verified: full French text
+  - https://www.onssa.gov.ma/cooperation-internationale/
+  - https://www.onssa.gov.ma/cooperation-nationale/
+  - https://www.onssa.gov.ma/oeuvres-sociales/
+  # --- Métiers ---
+  - https://www.onssa.gov.ma/sante-animale-dsa/
+  - https://www.onssa.gov.ma/controle-a-limportation-et-a-lexportation/
+  - https://www.onssa.gov.ma/controle-a-limportation-et-a-lexportation/controle-a-limportation/
+  - https://www.onssa.gov.ma/controle-a-limportation-et-a-lexportation/certification-a-lexportation/
+  - https://www.onssa.gov.ma/controle-a-limportation-et-a-lexportation/procedure-de-controle/
+  - https://www.onssa.gov.ma/controle-des-produits-alimentaires/
+  - https://www.onssa.gov.ma/agrement-et-autorisation/
+  - https://www.onssa.gov.ma/produits-phytopharmaceutiques-et-fertilisants/
+  - https://www.onssa.gov.ma/intrants-agricoles-ia/
+  - https://www.onssa.gov.ma/evaluation-des-risques/
+  - https://www.onssa.gov.ma/normalisation/
+  - https://www.onssa.gov.ma/codex-alimentarius/
+  # --- Réglementation & e-services ---
+  - https://www.onssa.gov.ma/reglementation/
+  - https://www.onssa.gov.ma/paiement-electronique/
+  # --- Divers ---
+  - https://www.onssa.gov.ma/liste-des-etablissements/
+  - https://www.onssa.gov.ma/glossary/
+
+exclude:
+  # Test / duplicate homepages (verified junk)
+  - https://www.onssa.gov.ma/home2/
+  - https://www.onssa.gov.ma/accueil-test-mobile/
+  - https://www.onssa.gov.ma/accueil-new/
+  - https://www.onssa.gov.ma/accueil-duplique/
+  # Empty or contentless pages (verified)
+  - https://www.onssa.gov.ma/faq/            # renders a heading only
+  - https://www.onssa.gov.ma/onssa/          # pure navigation hub, no text
+  - https://www.onssa.gov.ma/phototheque/
+  - https://www.onssa.gov.ma/newsletter/

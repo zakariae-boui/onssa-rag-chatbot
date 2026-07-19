@@ -1,0 +1,20 @@
+# Retrieval evaluation set: each entry = a question + the URL of the ONSSA page
+# that must appear in the top-5 retrieved sources (hit@5), scored by eval.py.
+#
+# Status: SEED (5 questions) — completed to 15 in Phase 3 once the corpus is
+# indexed and we can verify which page actually holds each answer.
+
+- question: "Quelles sont les missions de l'ONSSA ?"
+  expected_url: https://www.onssa.gov.ma/missions/
+
+- question: "Quelle est la procédure de contrôle à l'importation des produits alimentaires ?"
+  expected_url: https://www.onssa.gov.ma/controle-a-limportation-et-a-lexportation/controle-a-limportation/
+
+- question: "Qu'est-ce que l'agrément sanitaire et qui doit l'obtenir ?"
+  expected_url: https://www.onssa.gov.ma/agrement-et-autorisation/
+
+- question: "Comment payer les prestations de l'ONSSA en ligne ?"
+  expected_url: https://www.onssa.gov.ma/paiement-electronique/
+
+- question: "Que fait l'ONSSA en matière d'évaluation des risques ?"
+  expected_url: https://www.onssa.gov.ma/evaluation-des-risques/
