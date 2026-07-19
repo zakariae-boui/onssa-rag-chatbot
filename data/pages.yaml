@@ -68,3 +68,5 @@ exclude_patterns:
   - special-aid-al-adha-144[3-6]
   # Numeric-only junk slugs (e.g. /46379-2/)
   - 'onssa\.gov\.ma/\d[\d-]*/$'
+  # Legacy "-old" page trees (outdated duplicates of current pages)
+  - '-old/'
