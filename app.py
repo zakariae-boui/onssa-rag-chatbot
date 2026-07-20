@@ -218,32 +218,27 @@ for index, msg in enumerate(conv["messages"]):
         if msg["role"] == "assistant":
             render_assistant_extras(conv, index, msg)
 
-# --- Question handling — compose bar: text input (left) + mic button (right) ---
-col_input, col_mic = st.columns([12, 1], vertical_alignment="bottom")
+# --- Question handling — compose bar: text input (left) + mic recorder (right) ---
+# The recorder is placed directly (no popover) so one click on the mic starts
+# recording; a second click stops it and transcription runs automatically.
+col_input, col_mic = st.columns([8, 2], vertical_alignment="bottom")
 with col_mic:
-    with st.popover("🎙️", help="Poser la question par la voix"):
-        audio = st.audio_input(
-            "Enregistrez votre question", key="voice_input",
-            label_visibility="collapsed",
-        )
-        if audio is not None:
-            digest = hashlib.sha1(audio.getvalue()).hexdigest()
-            if st.session_state.get("voice_done") != digest:
-                transcript = ""
-                try:
-                    with st.spinner("Transcription en cours…"):
-                        transcript = voice.transcribe(load_stt(), audio.getvalue())
-                except Exception as exc:
-                    st.caption(
-                        "Transcription indisponible — vérifiez `pip install faster-whisper`. "
-                        f"({type(exc).__name__})"
-                    )
-                st.session_state.voice_done = digest
-                if transcript:
-                    st.session_state.pending_question = transcript
-                    st.rerun()
-                else:
-                    st.caption("Aucune parole détectée — réessayez.")
+    audio = st.audio_input(
+        "Question vocale", key="voice_input", label_visibility="collapsed",
+    )
+    if audio is not None:
+        digest = hashlib.sha1(audio.getvalue()).hexdigest()
+        if st.session_state.get("voice_done") != digest:
+            transcript = ""
+            try:
+                with st.spinner("Transcription…"):
+                    transcript = voice.transcribe(load_stt(), audio.getvalue())
+            except Exception as exc:
+                st.caption(f"Transcription indisponible ({type(exc).__name__})")
+            st.session_state.voice_done = digest
+            if transcript:
+                st.session_state.pending_question = transcript
+                st.rerun()
 with col_input:
     question = st.chat_input("Posez votre question sur l'ONSSA…")
 
