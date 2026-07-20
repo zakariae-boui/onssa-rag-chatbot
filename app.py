@@ -17,6 +17,40 @@ from onssa_rag.retriever import Retriever
 
 st.set_page_config(page_title="Assistant ONSSA", page_icon="🇲🇦", layout="centered")
 
+# Render the voice recorder as a clean mic-only icon flush to the chat input
+# (Gemini-style compose bar). Streamlit can't put the mic *inside* st.chat_input,
+# so we strip the recorder's box/waveform/timer and clip it to just the mic button.
+st.markdown(
+    """
+    <style>
+    [data-testid="stAudioInput"] {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        width: 48px !important;
+        min-width: 48px !important;
+        overflow: hidden !important;
+    }
+    /* strip the recorder's grey box so only the mic icon shows */
+    [data-testid="stAudioInput"],
+    [data-testid="stAudioInput"] * {
+        background: transparent !important;
+    }
+    [data-testid="stAudioInput"] [data-testid="stWidgetLabel"],
+    [data-testid="stAudioInput"] [data-testid="stElementToolbar"] {
+        display: none !important;
+    }
+    /* tighten the input↔mic gap and vertically center them */
+    div[data-testid="stHorizontalBlock"]:has([data-testid="stAudioInput"]) {
+        gap: 0.25rem !important;
+        align-items: center !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 LOGO = config.PROJECT_ROOT / "assets" / "onssa-logo.png"
 
 SUGGESTIONS = [
@@ -221,7 +255,7 @@ for index, msg in enumerate(conv["messages"]):
 # --- Question handling — compose bar: text input (left) + mic recorder (right) ---
 # The recorder is placed directly (no popover) so one click on the mic starts
 # recording; a second click stops it and transcription runs automatically.
-col_input, col_mic = st.columns([8, 2], vertical_alignment="bottom")
+col_input, col_mic = st.columns([16, 1], vertical_alignment="center")
 with col_mic:
     audio = st.audio_input(
         "Question vocale", key="voice_input", label_visibility="collapsed",
