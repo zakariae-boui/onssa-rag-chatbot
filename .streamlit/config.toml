@@ -1,0 +1,10 @@
+# Streamlit configuration for the ONSSA assistant.
+
+[server]
+# The file watcher probes every imported module for hot-reload; on the
+# transformers library this triggers torchvision import errors in the logs.
+# We don't need hot-reload, so disable it.
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false
