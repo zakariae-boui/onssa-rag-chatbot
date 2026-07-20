@@ -4,6 +4,7 @@ Run: streamlit run app.py
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 
@@ -11,7 +12,7 @@ import streamlit as st
 
 from onssa_rag import config
 from onssa_rag import conversations as convs
-from onssa_rag import llm, rag
+from onssa_rag import llm, rag, voice
 from onssa_rag.retriever import Retriever
 
 st.set_page_config(page_title="Assistant ONSSA", page_icon="🇲🇦", layout="centered")
@@ -28,6 +29,16 @@ SUGGESTIONS = [
 @st.cache_resource(show_spinner="Chargement de la base de connaissances…")
 def load_retriever() -> Retriever:
     return Retriever()
+
+
+@st.cache_resource(show_spinner="Chargement du modèle de transcription (1ʳᵉ fois : ~150 Mo)…")
+def load_stt():
+    return voice.load_stt()
+
+
+@st.cache_resource(show_spinner="Chargement de la voix française (1ʳᵉ fois : ~60 Mo)…")
+def load_tts():
+    return voice.load_tts()
 
 
 def startup_checks() -> None:
@@ -85,11 +96,35 @@ def render_sources(sources: list[str]) -> None:
 def render_assistant_extras(conv: dict, index: int, msg: dict) -> None:
     if msg.get("sources"):
         render_sources(msg["sources"])
-    rating = st.feedback("thumbs", key=f"fb_{conv['id']}_{index}")
-    if rating is not None and rating != msg.get("feedback"):
-        msg["feedback"] = rating
-        convs.save(conv)
-        log_feedback(conv, index, rating)
+
+    col_fb, col_listen = st.columns([1, 3])
+    with col_fb:
+        rating = st.feedback("thumbs", key=f"fb_{conv['id']}_{index}")
+        if rating is not None and rating != msg.get("feedback"):
+            msg["feedback"] = rating
+            convs.save(conv)
+            log_feedback(conv, index, rating)
+
+    wav_key = f"wav_{conv['id']}_{index}"
+    with col_listen:
+        if st.button("🔊 Écouter", key=f"tts_{conv['id']}_{index}"):
+            try:
+                with st.spinner("Synthèse vocale…"):
+                    st.session_state[wav_key] = voice.synthesize(
+                        load_tts(), voice.clean_for_speech(msg["content"])
+                    )
+                st.session_state.autoplay = wav_key
+            except Exception as exc:
+                st.caption(
+                    "Synthèse vocale indisponible — vérifiez `pip install piper-tts` "
+                    f"et la connexion pour le 1ᵉʳ téléchargement. ({type(exc).__name__})"
+                )
+    if wav_key in st.session_state:
+        st.audio(
+            st.session_state[wav_key],
+            format="audio/wav",
+            autoplay=st.session_state.pop("autoplay", None) == wav_key,
+        )
 
 
 # --- Startup ---
@@ -189,7 +224,28 @@ for index, msg in enumerate(conv["messages"]):
         if msg["role"] == "assistant":
             render_assistant_extras(conv, index, msg)
 
-# --- Question handling ---
+# --- Question handling (text or voice) ---
+with st.popover("🎙️ Question vocale"):
+    audio = st.audio_input("Enregistrez votre question", key="voice_input")
+    if audio is not None:
+        digest = hashlib.sha1(audio.getvalue()).hexdigest()
+        if st.session_state.get("voice_done") != digest:
+            transcript = ""
+            try:
+                with st.spinner("Transcription en cours…"):
+                    transcript = voice.transcribe(load_stt(), audio.getvalue())
+            except Exception as exc:
+                st.caption(
+                    "Transcription indisponible — vérifiez `pip install faster-whisper`. "
+                    f"({type(exc).__name__})"
+                )
+            st.session_state.voice_done = digest
+            if transcript:
+                st.session_state.pending_question = transcript
+                st.rerun()
+            else:
+                st.caption("Aucune parole détectée — réessayez.")
+
 question = st.chat_input("Posez votre question sur l'ONSSA…")
 if not question:
     question = st.session_state.pop("pending_question", None)
