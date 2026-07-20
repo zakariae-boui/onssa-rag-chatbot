@@ -61,7 +61,7 @@ class RagAnswer:
     text: str = ""
 
 
-def condense_question(history: list[dict], question: str) -> str:
+def condense_question(history: list[dict], question: str, model: str | None = None) -> str:
     """Rewrite a follow-up into a standalone query so retrieval works on it."""
     if not history:
         return question
@@ -71,7 +71,8 @@ def condense_question(history: list[dict], question: str) -> str:
     ]
     try:
         rewritten = llm.complete(
-            CONDENSE_PROMPT.format(history="\n".join(lines), question=question)
+            CONDENSE_PROMPT.format(history="\n".join(lines), question=question),
+            model=model,
         )
     except Exception:
         return question
@@ -96,18 +97,47 @@ def _build_messages(question: str, history: list[dict], passages: list[Passage])
     return messages
 
 
+def retrieve_for(
+    question: str,
+    history: list[dict],
+    retriever: Retriever,
+    *,
+    top_k: int | None = None,
+    max_context_chars: int | None = None,
+    model: str | None = None,
+):
+    """Condense + retrieve, exposed separately so the UI can show progress."""
+    standalone = condense_question(history, question, model=model)
+    result = retriever.retrieve(standalone, k=top_k, max_chars=max_context_chars)
+    return standalone, result
+
+
+def generate_stream(
+    question: str,
+    history: list[dict],
+    passages: list[Passage],
+    *,
+    model: str | None = None,
+    temperature: float = 0.2,
+):
+    return llm.chat_stream(
+        _build_messages(question, history, passages),
+        temperature=temperature,
+        model=model,
+    )
+
+
 def answer(question: str, history: list[dict], retriever: Retriever) -> RagAnswer:
     """Retrieval always happens before generation; below-gate results never
     reach the LLM (anti-hallucination)."""
-    standalone = condense_question(history, question)
-    result = retriever.retrieve(standalone)
+    _, result = retrieve_for(question, history, retriever)
     if not result.relevant or not result.passages:
         return RagAnswer(sources=[], grounded=False, text=FALLBACK_ANSWER)
     sources = list(dict.fromkeys(p.url for p in result.passages))
     return RagAnswer(
         sources=sources,
         grounded=True,
-        stream=llm.chat_stream(_build_messages(question, history, result.passages)),
+        stream=generate_stream(question, history, result.passages),
     )
 
 

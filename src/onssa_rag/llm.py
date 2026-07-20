@@ -27,9 +27,19 @@ def health() -> tuple[bool, str]:
     return True, f"{config.OLLAMA_MODEL} prêt"
 
 
-def chat_stream(messages: list[dict], temperature: float = 0.2) -> Iterator[str]:
+def available_models() -> list[str]:
+    """Models pulled in the local Ollama, [] when the server is unreachable."""
+    try:
+        return sorted(m.model for m in _client().list().models if m.model)
+    except Exception:
+        return []
+
+
+def chat_stream(
+    messages: list[dict], temperature: float = 0.2, model: str | None = None
+) -> Iterator[str]:
     for part in _client().chat(
-        model=config.OLLAMA_MODEL,
+        model=model or config.OLLAMA_MODEL,
         messages=messages,
         stream=True,
         keep_alive=config.OLLAMA_KEEP_ALIVE,
@@ -38,9 +48,14 @@ def chat_stream(messages: list[dict], temperature: float = 0.2) -> Iterator[str]
         yield part["message"]["content"]
 
 
-def complete(prompt: str, temperature: float = 0.0, max_tokens: int = 150) -> str:
+def complete(
+    prompt: str,
+    temperature: float = 0.0,
+    max_tokens: int = 150,
+    model: str | None = None,
+) -> str:
     resp = _client().generate(
-        model=config.OLLAMA_MODEL,
+        model=model or config.OLLAMA_MODEL,
         prompt=prompt,
         keep_alive=config.OLLAMA_KEEP_ALIVE,
         options={"temperature": temperature, "num_predict": max_tokens},

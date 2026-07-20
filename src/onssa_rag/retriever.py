@@ -118,8 +118,12 @@ class Retriever:
                 break
         return urls
 
-    def retrieve(self, query: str, k: int = config.TOP_K) -> RetrievalResult:
+    def retrieve(
+        self, query: str, k: int | None = None, max_chars: int | None = None
+    ) -> RetrievalResult:
         """Top-k fused chunks expanded to their full parent sections."""
+        k = k or config.TOP_K
+        max_chars = max_chars or config.MAX_CONTEXT_CHARS
         order, best_vec, best_bm = self.rank(query)
         passages: list[Passage] = []
         seen: set[str] = set()
@@ -141,6 +145,6 @@ class Retriever:
                 )
             )
             total += len(text)
-            if len(passages) >= k or total >= config.MAX_CONTEXT_CHARS:
+            if len(passages) >= k or total >= max_chars:
                 break
         return RetrievalResult(passages, best_vec, best_bm)
