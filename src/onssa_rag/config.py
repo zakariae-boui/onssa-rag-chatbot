@@ -56,7 +56,7 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "900"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
 
 # --- Voice (both fully local, CPU) ---
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")  # tiny/base/small — size vs accuracy
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")  # tiny/base/small/medium — size vs accuracy
 PIPER_VOICE = os.getenv("PIPER_VOICE", "fr_FR-siwis-medium")
 VOICES_DIR = DATA_DIR / "voices"
 

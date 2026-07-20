@@ -198,12 +198,6 @@ with st.sidebar:
         col1, col2 = st.columns(2)
         col1.metric("Pages indexées", manifest["n_pages"])
         col2.metric("Extraits", manifest["n_chunks"])
-        st.caption(
-            "Projet éducatif — assistant non officiel. Les réponses sont générées "
-            "automatiquement à partir du contenu publié par l'ONSSA ; elles ne "
-            "constituent ni un avis officiel, ni un conseil juridique, médical "
-            "ou vétérinaire."
-        )
 
 # --- Conversation display ---
 if not conv["messages"]:
