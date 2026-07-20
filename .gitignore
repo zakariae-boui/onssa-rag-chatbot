@@ -34,3 +34,6 @@ Thumbs.db
 
 # Playwright browser-test artifacts
 .playwright-mcp/
+
+# Loose screenshots dropped in project root (copies live in docs/screenshots/)
+/Screenshot *.png
