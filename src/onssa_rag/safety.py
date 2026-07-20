@@ -48,10 +48,17 @@ _PATTERNS: dict[str, list[str]] = {
         r"(prendre|donner|administrer|suivre|utiliser|lui|pour|contre)",
         r"\bposologie\b|\bdosage\b|mg\s*/\s*kg|quelle dose",
         r"traitement de (la )?(premiere|1re|1ere) ligne",
-        r"(antibiotique|medicament|molecule)s?[^?.!]{0,40}"
-        r"(traitement|traiter|soigner|guerir|infection|maladie|premiere ligne)",
-        r"(traitement|traiter|soigner|guerir|infection|stopper)[^?.!]{0,40}"
-        r"(antibiotique|medicament|molecule)",
+        # drug + treatment-verb STEM (trait/soign/gueri) so conjugations are
+        # covered: traite, traitent, traiter, traitement, soigne, soignent, guérit…
+        r"(antibiotique|medicament|molecule|penicilline|amoxicilline|ampicilline|"
+        r"gentamicine|cephalosporine|sulfamide|sulfonamide|ivermectine)s?"
+        r"[^?.!]{0,45}(trait|soign|gueri)",
+        r"(trait|soign|gueri)[^?.!]{0,45}"
+        r"(antibiotique|medicament|molecule|penicilline|amoxicilline|ampicilline|"
+        r"gentamicine|cephalosporine|sulfamide|ivermectine)",
+        # a specific drug named in the question is almost always advice-seeking
+        r"\b(penicilline|amoxicilline|ampicilline|gentamicine|cephalosporine|"
+        r"sulfamide|ivermectine|cortisone|paracetamol|ibuprofene|antibiogramme)\b",
         r"comment\s+(soigner|guerir)\b",
     ],
     LEGAL: [
