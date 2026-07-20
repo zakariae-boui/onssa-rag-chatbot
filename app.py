@@ -255,42 +255,47 @@ if question:
         {"role": m["role"], "content": m["content"]} for m in conv["messages"][:-1]
     ]
     with st.chat_message("assistant"):
-        with st.status("🔎 Analyse de la question…", expanded=False) as status:
-            standalone, result = rag.retrieve_for(
-                question,
-                history,
-                retriever,
-                top_k=s["top_k"],
-                max_context_chars=s["max_context"],
-                model=s["model"],
-            )
-            if standalone != question:
-                st.caption(f"Question reformulée : *{standalone}*")
-            if result.relevant and result.passages:
-                for p in result.passages:
-                    st.caption(f"📄 [{p.title}]({p.url})")
-                status.update(
-                    label=f"✅ {len(result.passages)} extraits trouvés — rédaction en cours…",
-                    state="complete",
-                )
-            else:
-                status.update(label="ℹ️ Aucun contenu pertinent trouvé", state="complete")
-
-        if result.relevant and result.passages:
-            text = st.write_stream(
-                rag.generate_stream(
+        refusal = rag.safety_refusal(question)
+        if refusal:
+            st.markdown(refusal)
+            text, sources = refusal, []
+        else:
+            with st.status("🔎 Analyse de la question…", expanded=False) as status:
+                standalone, result = rag.retrieve_for(
                     question,
                     history,
-                    result.passages,
+                    retriever,
+                    top_k=s["top_k"],
+                    max_context_chars=s["max_context"],
                     model=s["model"],
-                    temperature=s["temperature"],
                 )
-            )
-            sources = list(dict.fromkeys(p.url for p in result.passages))
-        else:
-            text = rag.FALLBACK_ANSWER
-            st.markdown(text)
-            sources = []
+                if standalone != question:
+                    st.caption(f"Question reformulée : *{standalone}*")
+                if result.relevant and result.passages:
+                    for p in result.passages:
+                        st.caption(f"📄 [{p.title}]({p.url})")
+                    status.update(
+                        label=f"✅ {len(result.passages)} extraits trouvés — rédaction en cours…",
+                        state="complete",
+                    )
+                else:
+                    status.update(label="ℹ️ Aucun contenu pertinent trouvé", state="complete")
+
+            if result.relevant and result.passages:
+                text = st.write_stream(
+                    rag.generate_stream(
+                        question,
+                        history,
+                        result.passages,
+                        model=s["model"],
+                        temperature=s["temperature"],
+                    )
+                )
+                sources = list(dict.fromkeys(p.url for p in result.passages))
+            else:
+                text = rag.FALLBACK_ANSWER
+                st.markdown(text)
+                sources = []
 
     conv["messages"].append({"role": "assistant", "content": text, "sources": sources})
     convs.save(conv)
