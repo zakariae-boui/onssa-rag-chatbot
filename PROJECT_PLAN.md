@@ -1,14 +1,5 @@
 # ONSSA Customer Assistance Chatbot — Project Plan & Architecture
 
-> Internship assignment (Data & AI): RAG chatbot over the official ONSSA website
-> (https://www.onssa.gov.ma/) using **Streamlit + Ollama + FAISS**, no paid API.
->
-> This document is the blueprint: what we ship, why each technical choice was made,
-> and the build order. Written **before** implementation, based on live reconnaissance
-> of the ONSSA website (July 2026).
-
----
-
 ## 1. What we ship (deliverables checklist)
 
 | # | Deliverable | Where it lives |
