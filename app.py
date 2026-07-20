@@ -142,7 +142,7 @@ manifest = retriever.manifest
 # --- Sidebar ---
 with st.sidebar:
     if LOGO.exists():
-        st.image(str(LOGO), use_container_width=True)
+        st.image(str(LOGO), width="stretch")
     st.title("Assistant ONSSA")
 
     query = st.text_input(
@@ -150,7 +150,7 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    if st.button("➕ Nouvelle conversation", use_container_width=True, type="primary"):
+    if st.button("➕ Nouvelle conversation", width="stretch", type="primary"):
         st.session_state.conv = convs.create()
         st.rerun()
 
@@ -158,7 +158,7 @@ with st.sidebar:
         col_open, col_del = st.columns([5, 1])
         prefix = "🟢 " if saved["id"] == conv["id"] else "💬 "
         if col_open.button(
-            prefix + saved["title"], key=f"open_{saved['id']}", use_container_width=True
+            prefix + saved["title"], key=f"open_{saved['id']}", width="stretch"
         ):
             st.session_state.conv = saved
             st.rerun()
@@ -170,7 +170,7 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button("🔄 Réinitialiser la conversation", use_container_width=True):
+    if st.button("🔄 Réinitialiser la conversation", width="stretch"):
         convs.delete(conv["id"])
         st.session_state.conv = convs.create()
         st.rerun()
@@ -208,7 +208,7 @@ if not conv["messages"]:
     )
     cols = st.columns(len(SUGGESTIONS))
     for col, suggestion in zip(cols, SUGGESTIONS):
-        if col.button(suggestion, key=f"sugg_{suggestion[:20]}", use_container_width=True):
+        if col.button(suggestion, key=f"sugg_{suggestion[:20]}", width="stretch"):
             st.session_state.pending_question = suggestion
             st.rerun()
 
