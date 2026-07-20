@@ -17,6 +17,9 @@ data/index/
 data/conversations/
 data/feedback.jsonl
 
+# Downloaded voice models (fetched on first use)
+data/voices/
+
 # Models cache
 .cache/
 
