@@ -13,6 +13,10 @@ data/raw_html/
 data/clean/
 data/index/
 
+# User data (personal — never committed)
+data/conversations/
+data/feedback.jsonl
+
 # Models cache
 .cache/
 
