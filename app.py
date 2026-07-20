@@ -4,13 +4,25 @@ Run: streamlit run app.py
 """
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
+
 import streamlit as st
 
-from onssa_rag import config, llm
-from onssa_rag.rag import answer
+from onssa_rag import config
+from onssa_rag import conversations as convs
+from onssa_rag import llm, rag
 from onssa_rag.retriever import Retriever
 
 st.set_page_config(page_title="Assistant ONSSA", page_icon="🇲🇦", layout="centered")
+
+LOGO = config.PROJECT_ROOT / "assets" / "onssa-logo.png"
+
+SUGGESTIONS = [
+    "Quelles sont les missions de l'ONSSA ?",
+    "Comment payer les prestations en ligne ?",
+    "Comment contacter l'ONSSA ?",
+]
 
 
 @st.cache_resource(show_spinner="Chargement de la base de connaissances…")
@@ -34,12 +46,53 @@ def startup_checks() -> None:
         st.session_state.ollama_ok = True
 
 
+def settings() -> dict:
+    if "settings" not in st.session_state:
+        st.session_state.settings = {
+            "model": config.OLLAMA_MODEL,
+            "temperature": 0.2,
+            "top_k": config.TOP_K,
+            "max_context": config.MAX_CONTEXT_CHARS,
+        }
+    return st.session_state.settings
+
+
+def active_conv() -> dict:
+    if "conv" not in st.session_state:
+        st.session_state.conv = convs.create()
+    return st.session_state.conv
+
+
+def log_feedback(conv: dict, index: int, value: int) -> None:
+    question = conv["messages"][index - 1]["content"] if index > 0 else ""
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "conversation": conv["id"],
+        "question": question,
+        "rating": "up" if value == 1 else "down",
+        "model": settings()["model"],
+    }
+    with open(config.DATA_DIR / "feedback.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
 def render_sources(sources: list[str]) -> None:
     with st.expander("📄 Sources (site ONSSA)"):
         for url in sources:
             st.markdown(f"- [{url}]({url})")
 
 
+def render_assistant_extras(conv: dict, index: int, msg: dict) -> None:
+    if msg.get("sources"):
+        render_sources(msg["sources"])
+    rating = st.feedback("thumbs", key=f"fb_{conv['id']}_{index}")
+    if rating is not None and rating != msg.get("feedback"):
+        msg["feedback"] = rating
+        convs.save(conv)
+        log_feedback(conv, index, rating)
+
+
+# --- Startup ---
 startup_checks()
 try:
     retriever = load_retriever()
@@ -47,66 +100,148 @@ except RuntimeError as exc:
     st.error(f"**Index incompatible.** {exc}")
     st.stop()
 
-# --- Sidebar: model info, corpus stats, reset (assignment requirements) ---
+conv = active_conv()
+s = settings()
+manifest = retriever.manifest
+
+# --- Sidebar ---
 with st.sidebar:
-    st.title("🇲🇦 Assistant ONSSA")
-    st.caption(
-        "Chatbot d'assistance basé exclusivement sur le contenu du site officiel "
-        "[onssa.gov.ma](https://www.onssa.gov.ma/)."
+    if LOGO.exists():
+        st.image(str(LOGO), use_container_width=True)
+    st.title("Assistant ONSSA")
+
+    query = st.text_input(
+        "Rechercher", placeholder="🔍 Rechercher une conversation…",
+        label_visibility="collapsed",
     )
-    manifest = retriever.manifest
-    st.markdown(f"**Modèle LLM :** `{config.OLLAMA_MODEL}`")
-    st.markdown(f"**Embeddings :** `{manifest['embedding_model'].split('/')[-1]}`")
-    col1, col2 = st.columns(2)
-    col1.metric("Pages indexées", manifest["n_pages"])
-    col2.metric("Chunks", manifest["n_chunks"])
-    if st.button("🔄 Réinitialiser la conversation", use_container_width=True):
-        st.session_state.messages = []
+
+    if st.button("➕ Nouvelle conversation", use_container_width=True, type="primary"):
+        st.session_state.conv = convs.create()
         st.rerun()
+
+    for saved in convs.search(convs.load_all(), query):
+        col_open, col_del = st.columns([5, 1])
+        prefix = "🟢 " if saved["id"] == conv["id"] else "💬 "
+        if col_open.button(
+            prefix + saved["title"], key=f"open_{saved['id']}", use_container_width=True
+        ):
+            st.session_state.conv = saved
+            st.rerun()
+        if col_del.button("🗑️", key=f"del_{saved['id']}"):
+            convs.delete(saved["id"])
+            if saved["id"] == conv["id"]:
+                st.session_state.conv = convs.create()
+            st.rerun()
+
     st.divider()
-    st.caption(
-        "Les réponses sont générées automatiquement à partir du contenu publié par "
-        "l'ONSSA ; elles ne constituent ni un avis officiel, ni un conseil juridique, "
-        "médical ou vétérinaire."
-    )
 
-# --- Conversation ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    if st.button("🔄 Réinitialiser la conversation", use_container_width=True):
+        convs.delete(conv["id"])
+        st.session_state.conv = convs.create()
+        st.rerun()
 
-if not st.session_state.messages:
+    # Always visible (assignment requirement: model name + indexed docs)
+    st.caption(f"🧠 `{s['model']}` · 📄 {manifest['n_pages']} pages · {manifest['n_chunks']} extraits")
+
+    with st.expander("⚙️ Paramètres"):
+        models = llm.available_models() or [s["model"]]
+        current = models.index(s["model"]) if s["model"] in models else 0
+        s["model"] = st.selectbox("Modèle LLM", models, index=current)
+        s["temperature"] = st.slider("Température", 0.0, 1.0, s["temperature"], 0.05)
+        s["top_k"] = st.slider("Extraits récupérés (top-k)", 3, 8, s["top_k"])
+        s["max_context"] = st.slider(
+            "Taille du contexte (caractères)", 2000, 10000, s["max_context"], 1000,
+            help="Plus bas = réponses plus rapides ; plus haut = réponses plus complètes.",
+        )
+
+    with st.expander("ℹ️ À propos"):
+        st.markdown(
+            "Assistant basé exclusivement sur le contenu du site officiel "
+            "[onssa.gov.ma](https://www.onssa.gov.ma/)."
+        )
+        st.markdown(f"**Embeddings :** `{manifest['embedding_model'].split('/')[-1]}`")
+        col1, col2 = st.columns(2)
+        col1.metric("Pages indexées", manifest["n_pages"])
+        col2.metric("Extraits", manifest["n_chunks"])
+        st.caption(
+            "Projet éducatif — assistant non officiel. Les réponses sont générées "
+            "automatiquement à partir du contenu publié par l'ONSSA ; elles ne "
+            "constituent ni un avis officiel, ni un conseil juridique, médical "
+            "ou vétérinaire."
+        )
+
+# --- Conversation display ---
+if not conv["messages"]:
     st.markdown(
         "##### 👋 Bienvenue !\n"
         "Posez vos questions sur l'ONSSA : missions, organisation, métiers, "
         "réglementation, e-services, contacts et démarches."
     )
+    cols = st.columns(len(SUGGESTIONS))
+    for col, suggestion in zip(cols, SUGGESTIONS):
+        if col.button(suggestion, key=f"sugg_{suggestion[:20]}", use_container_width=True):
+            st.session_state.pending_question = suggestion
+            st.rerun()
 
-for msg in st.session_state.messages:
+for index, msg in enumerate(conv["messages"]):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
-        if msg.get("sources"):
-            render_sources(msg["sources"])
+        if msg["role"] == "assistant":
+            render_assistant_extras(conv, index, msg)
 
-if question := st.chat_input("Posez votre question sur l'ONSSA…"):
-    st.session_state.messages.append({"role": "user", "content": question})
+# --- Question handling ---
+question = st.chat_input("Posez votre question sur l'ONSSA…")
+if not question:
+    question = st.session_state.pop("pending_question", None)
+
+if question:
+    conv["messages"].append({"role": "user", "content": question})
+    if len(conv["messages"]) == 1:
+        conv["title"] = convs.title_from(question)
     with st.chat_message("user"):
         st.markdown(question)
 
+    history = [
+        {"role": m["role"], "content": m["content"]} for m in conv["messages"][:-1]
+    ]
     with st.chat_message("assistant"):
-        history = [
-            {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages[:-1]
-        ]
-        with st.spinner("Recherche dans le contenu du site de l'ONSSA…"):
-            result = answer(question, history, retriever)
-        if result.grounded:
-            text = st.write_stream(result.stream)
-        else:
-            st.markdown(result.text)
-            text = result.text
-        if result.sources:
-            render_sources(result.sources)
+        with st.status("🔎 Analyse de la question…", expanded=False) as status:
+            standalone, result = rag.retrieve_for(
+                question,
+                history,
+                retriever,
+                top_k=s["top_k"],
+                max_context_chars=s["max_context"],
+                model=s["model"],
+            )
+            if standalone != question:
+                st.caption(f"Question reformulée : *{standalone}*")
+            if result.relevant and result.passages:
+                for p in result.passages:
+                    st.caption(f"📄 [{p.title}]({p.url})")
+                status.update(
+                    label=f"✅ {len(result.passages)} extraits trouvés — rédaction en cours…",
+                    state="complete",
+                )
+            else:
+                status.update(label="ℹ️ Aucun contenu pertinent trouvé", state="complete")
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": text, "sources": result.sources}
-    )
+        if result.relevant and result.passages:
+            text = st.write_stream(
+                rag.generate_stream(
+                    question,
+                    history,
+                    result.passages,
+                    model=s["model"],
+                    temperature=s["temperature"],
+                )
+            )
+            sources = list(dict.fromkeys(p.url for p in result.passages))
+        else:
+            text = rag.FALLBACK_ANSWER
+            st.markdown(text)
+            sources = []
+
+    conv["messages"].append({"role": "assistant", "content": text, "sources": sources})
+    convs.save(conv)
+    st.rerun()

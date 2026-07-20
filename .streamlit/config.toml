@@ -8,3 +8,8 @@ fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+# ONSSA brand green as accent; base colors stay adaptive so the native
+# light/dark switch (menu > Settings) keeps working.
+primaryColor = "#1E8A4C"
