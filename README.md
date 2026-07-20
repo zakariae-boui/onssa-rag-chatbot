@@ -12,6 +12,8 @@
   <code>hybrid retrieval (vector + BM25)</code> · <code>local voice (Whisper + Piper)</code>
 </p>
 
+![Assistant ONSSA — home screen](docs/screenshots/app-home.png)
+
 ---
 
 ## 📑 Table of contents
