@@ -95,7 +95,7 @@ def settings() -> dict:
     if "settings" not in st.session_state:
         st.session_state.settings = {
             "model": config.OLLAMA_MODEL,
-            "temperature": 0.2,
+            "temperature": config.LLM_TEMPERATURE,
             "top_k": config.TOP_K,
             "max_context": config.MAX_CONTEXT_CHARS,
         }

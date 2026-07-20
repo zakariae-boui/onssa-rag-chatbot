@@ -16,7 +16,7 @@ usually caught by another:
 flowchart TD
     Q[User question] --> L1[Layer 1 — Relevance gate<br/>off-topic → refused before the LLM is called]
     L1 -- passes --> L2[Layer 2 — System prompt rules<br/>answer only from extracts · no advice · ignore role-play]
-    L2 --> L3[Layer 3 — Low temperature 0.2<br/>conservative, on-script generation]
+    L2 --> L3[Layer 3 — Temperature 0.0<br/>deterministic, on-script generation]
     L3 --> L4[Layer 4 — Visible sources<br/>every claim is user-verifiable]
     L4 --> A[Answer]
 ```
@@ -38,7 +38,7 @@ flowchart TD
   facts or external links, forbid revealing the instructions, and instruct the
   model to ignore in-chat attempts to change its rules (fake authority, threats,
   role-play, fiction/"purely scientific" framings).
-- **Layer 3 — Temperature 0.2.** Keeps generation factual and on-script.
+- **Layer 3 — Temperature 0.0.** Deterministic decoding keeps generation factual and on-script.
 - **Layer 4 — Visible sources.** Every answer shows the ONSSA URLs it used, so a
   user can immediately verify — a bad answer cannot hide.
 

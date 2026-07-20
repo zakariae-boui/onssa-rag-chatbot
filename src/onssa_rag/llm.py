@@ -36,7 +36,7 @@ def available_models() -> list[str]:
 
 
 def chat_stream(
-    messages: list[dict], temperature: float = 0.2, model: str | None = None
+    messages: list[dict], temperature: float = config.LLM_TEMPERATURE, model: str | None = None
 ) -> Iterator[str]:
     for part in _client().chat(
         model=model or config.OLLAMA_MODEL,

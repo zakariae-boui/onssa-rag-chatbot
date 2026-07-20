@@ -152,7 +152,7 @@ a procedure arrives with all its steps). Free, because sections are already stor
   attempts to change the rules.
 - **`num_ctx=8192`** — Ollama's 4096 default silently truncates the system prompt
   on context-rich questions (a real bug caught in testing).
-- **Streaming** via `st.write_stream`; **temperature 0.2** (factual).
+- **Streaming** via `st.write_stream`; **temperature 0.0** (deterministic/factual).
 - **Follow-ups** are condensed into standalone questions before retrieval, so
   "et pour l'exportation ?" retrieves correctly.
 

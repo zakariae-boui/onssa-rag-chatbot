@@ -36,6 +36,8 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
 
 # --- RAG ---
 TOP_K = int(os.getenv("TOP_K", "5"))
+# 0.0 = fully deterministic/factual generation (recommended for a grounded QA bot)
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.0"))
 RETRIEVER_CANDIDATES = int(os.getenv("RETRIEVER_CANDIDATES", "20"))
 # Calibrated empirically for multilingual-e5-base: in-scope questions score
 # 0.83+, out-of-scope 0.82 and below (e5 has a high cosine floor, so classic

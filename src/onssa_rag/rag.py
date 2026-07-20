@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-from . import llm, safety
+from . import config, llm, safety
 from .retriever import Passage, Retriever
 
 SYSTEM_PROMPT = """Tu es l'assistant virtuel du site officiel de l'ONSSA \
@@ -121,7 +121,7 @@ def generate_stream(
     passages: list[Passage],
     *,
     model: str | None = None,
-    temperature: float = 0.2,
+    temperature: float = config.LLM_TEMPERATURE,
 ):
     return llm.chat_stream(
         _build_messages(question, history, passages),
